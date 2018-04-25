@@ -1,5 +1,3 @@
 using PCRE2
-using Base.Test
 
-# write your own tests here
-@test 1 == 2
+@static VERSION < v"0.7.0-DEV" ? (using Base.Test) : (using Test)
