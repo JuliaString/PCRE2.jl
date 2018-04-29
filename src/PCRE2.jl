@@ -347,8 +347,8 @@ const funclist =
  (:substring_copy_byname,      Cint,           (MatchDataP, StrP, UCharP, SizeRef)),
  (:substring_copy_bynumber,    Cint,           (MatchDataP, UInt32, UCharP, SizeRef)),
  (:substring_free,             Cvoid,          (UCharP,)),
- (:substring_get_byname,       Cint,           (MatchDataP, StrP, Ptr{UCharP}, SizeRef)),
- (:substring_get_bynumber,     Cint,           (MatchDataP, UInt32, Ptr{UCharP}, SizeRef)),
+ (:substring_get_byname,       Cint,           (MatchDataP, StrP, Ref{UCharP}, SizeRef)),
+ (:substring_get_bynumber,     Cint,           (MatchDataP, UInt32, Ref{UCharP}, SizeRef)),
  (:substring_length_byname,    Cint,           (MatchDataP, StrP, SizeRef)),
  (:substring_length_bynumber,  Cint,           (MatchDataP, UInt32, SizeRef)),
  (:substring_nametable_scan,   Cint,           (CodeP, StrP, Ptr{StrP}, Ptr{StrP})),
@@ -401,42 +401,29 @@ const funclist =
 
 for siz in (8,16,32), (nam, ret, sig) in funclist
     l = SubString("a,b,c,d,e,f,g,h,i,j,k,l,m", 1, length(sig)*2-1)
+    #parms = string(["$('a'+i-1)::$(sig[i]), " for i=1:length(sig)]...)[1:end-1]
     sub = "UInt$siz"
     rep = "PCRE2._UCHAR"
     str = "$nam(::Type{$sub},$l)=ccall((:pcre2_$(nam)_$siz,LIB_$siz),$ret,$sig,$l)"
     ev(@static VERSION < v"v0.7.0-DEV" ? replace(str, rep, sub) : replace(str, rep => sub))
 end
 
-#=
-# Old list had 18 functions
-const oldlist =
-(
- (:jit_stack_create,               VoidP,  (Cint, Cint, VoidP)),
- (:match_context_create,           VoidP,  (VoidP,)),
- (:jit_stack_assign,               Cvoid,  (VoidP, VoidP, VoidP)),
- (:pattern_info,                   Int32,  (VoidP, Int32, VoidP)),
- (:ovector_pointer,                SizeP,  (VoidP,)),
- (:get_ovector_count,              UInt32, (VoidP,)),
- (:compile,                        VoidP,
-     (VoidP, Csize_t, UInt32, Ref{Cint}, Ref{Csize_t}, VoidP)),
- (:jit_compile,                    Cint,   (VoidP, UInt32)),
- (:get_error_message,              Cvoid,  (Int32, VoidP, Csize_t)),
- (:match_data_free,                Cvoid,  (VoidP,)),
- (:code_free,                      Cvoid,  (VoidP,)),
- (:jit_stack_free,                 Cvoid,  (VoidP,)),
- (:match_context_free,             Cvoid,  (VoidP,)),
- (:match,                          Cint,   (VoidP, VoidP, Csize_t, Csize_t, Cuint, VoidP, VoidP)),
- (:match_data_create_from_pattern, VoidP,  (VoidP, VoidP)),
- (:substring_number_from_name,     Cint,   (VoidP, Cstring)),
- (:substring_length_bynumber,      Cint,   (VoidP, UInt32, Ref{Csize_t})),
- (:substring_copy_bynumber,        Cint,   (VoidP, UInt32, VoidP, Ref{Csize_t})))
-=#
+struct PCRE2_Error <: Exception
+    errmsg::String
+    errno::Int32
+    erroff::Int32
+    PCRE2_Error(errmsg, errno, erroff = -1) = new(errmsg, errno%Int32, erroff%Int32)
+end
 
-pcre_error(msg::AbstractString) = error(msg)
-pcre_error(errno::Integer) = error("PCRE2 error: $(err_message(errno))")
-jit_error(errno) = error("PCRE2 JIT error: $(err_message(errno))")
-compile_error(errno, erroff) =
-    error("PCRE2 compilation error: $(err_message(errno[])) at offset $(erroff[])")
+Base.show(io::IO, exc::PCRE2_Error) =
+    print(io, "PCRE2: ", exc.errmsg,
+          exc.errno < 0 ? "" : "error: $(err_message(exc.errno))",
+          exc.erroff < 0 ? "" : "at offset $(exc.erroff)")
+
+pcre_error(msg::AbstractString) = throw(PCRE2_Error(msg, -1))
+pcre_error(errno::Integer)      = throw(PCRE2_Error("", errno))
+jit_error(errno::Integer)       = throw(PCRE2_Error("JIT ", errno))
+compile_error(errno, erroff)    = throw(PCRE2_Error("compilation ", errno, erroff))
 
 function info_error(errno)
     errno == ERROR_NULL && pcre_error("NULL regex object")
@@ -460,7 +447,7 @@ function compile(pattern::T, options::Integer) where {T<:AbstractString}
     errno = RefValue{Cint}(0)
     erroff = RefValue{Csize_t}(0)
     re_ptr = compile(codeunit(T), pattern, _ncodeunits(pattern), options, errno, erroff, C_NULL)
-    re_ptr == C_NULL ? compile_error(errno, erroff) : re_ptr
+    re_ptr == C_NULL ? compile_error(errno[], erroff[]) : re_ptr
 end
 
 """Wrapper for jit_compile() function, throw error on error return with error info"""
@@ -468,19 +455,18 @@ jit_compile(::Type{T}, regex::CodeP) where {T<:CodeUnitTypes} =
     ((errno = jit_compile(T, regex, JIT_COMPLETE)) == 0 || jit_error(errno) ; nothing)
 
 function err_message(errno)
-    buffer = Vector{UInt8}(undef, 256)
+    buffer = create_vector(UInt8, 256)
     get_error_message(UInt8, errno, buffer, sizeof(buffer))
     @preserve buffer unsafe_string(pointer(buffer))
 end
 
-function substring_length_bynumber(::Type{T}, match_data, num) where {T<:CodeUnitTypes}
+function sub_length_bynumber(::Type{T}, match_data, num) where {T<:CodeUnitTypes}
     s = RefValue{Csize_t}()
     rc = substring_length_bynumber(T, match_data, num, s)
     rc < 0 ? pcre_error(rc) : convert(Int, s[])
 end
 
-function substring_copy_bynumber(::Type{T}, match_data, num, buf,
-                                 siz::Integer) where {T<:CodeUnitTypes}
+function sub_copy_bynumber(::Type{T}, match_data, num, buf, siz::Integer) where {T<:CodeUnitTypes}
     s = RefValue{Csize_t}(siz)
     rc = substring_copy_bynumber(T, match_data, num, buf, s)
     rc < 0 ? pcre_error(rc) : convert(Int, s[])
