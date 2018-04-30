@@ -22,7 +22,10 @@ const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
     ev(s) = eval(parse(s))
     const Nothing = Void
     const Cvoid   = Void
-    _ncodeunits(s) = sizeof(s) * sizeof(eltype(pointer(s)))
+    _ncodeunits(::Type{UInt8}, s)  = sizeof(s)
+    _ncodeunits(::Type{UInt16}, s) = sizeof(s)>>>1
+    _ncodeunits(::Type{UInt32}, s) = sizeof(s)>>>2
+    _ncodeunits(s) = _ncodeunits(codeunit(s), s)
     create_vector(T, len) = Vector{T}(len)
 else # !V6_COMPAT
     import Base.GC: @preserve
