@@ -1,9 +1,10 @@
 # PCRE2
 
+[![PCRE2](http://pkg.julialang.org/badges/PCRE2_0.6.svg)](http://pkg.julialang.org/detail/PCRE2)
+[![PCRE2](http://pkg.julialang.org/badges/PCRE2_0.7.svg)](http://pkg.julialang.org/detail/PCRE2)
 [![Build Status](https://travis-ci.org/JuliaString/PCRE2.jl.svg?branch=master)](https://travis-ci.org/JuliaString/PCRE2.jl)
 
 [![Coverage Status](https://coveralls.io/repos/JuliaString/PCRE2.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaString/PCRE2.jl?branch=master)
-
 [![codecov.io](http://codecov.io/github/JuliaString/PCRE2.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaString/PCRE2.jl?branch=master)
 
 The `PCRE2` package implements a low-level API for accessing the PCRE libraries (8, 16, and 32-bit)
