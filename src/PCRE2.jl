@@ -9,6 +9,8 @@ Licensed under MIT License, see LICENSE.md
 __precompile__()
 module PCRE2
 
+const V6_COMPAT = VERSION < v"0.7.0-DEV"
+
 if VERSION >= v"0.7.0-DEV.3382"
     import Libdl
 end
@@ -28,7 +30,7 @@ end
 
 const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
 
-@static if VERSION < v"v0.7.0-DEV"
+@static if V6_COMPAT
     macro preserve(args...)
         syms = args[1:end-1]
         for x in syms
@@ -36,7 +38,7 @@ const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
         end
         esc(quote ; $(args[end]) ; end)
     end
-    ev(s) = eval(parse(s))
+    evr(str, rep, sub) = eval(current_module(), parse(replace(str, rep, sub)))
     const Nothing = Void
     const Cvoid   = Void
     _ncodeunits(::Type{UInt8}, s)  = sizeof(s)
@@ -46,7 +48,7 @@ const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
     create_vector(T, len) = Vector{T}(len)
 else # !V6_COMPAT
     import Base.GC: @preserve
-    ev(s) = eval(Meta.parse(s))
+    evr(str, rep, sub) = Core.eval(@__MODULE__, Meta.parse(replace(str, rep => sub)))
     const _ncodeunits = ncodeunits
     create_vector(T, len)  = Vector{T}(undef, len)
 end
@@ -62,9 +64,8 @@ for siz in (8,16,32), (nam, ret, sig) in funclist
     l = SubString("a,b,c,d,e,f,g,h,i,j,k,l,m", 1, length(sig)*2-1)
     #parms = string(["$('a'+i-1)::$(sig[i]), " for i=1:length(sig)]...)[1:end-1]
     sub = "UInt$siz"
-    rep = "PCRE2._UCHAR"
     str = "$nam(::Type{$sub},$l)=ccall((:pcre2_$(nam)_$siz, libpcre2_$siz),$ret,$sig,$l)"
-    ev(@static VERSION < v"v0.7.0-DEV" ? replace(str, rep, sub) : replace(str, rep => sub))
+    evr(str, "PCRE2._UCHAR", sub)
 end
 
 const UNSET = ~Csize_t(0)  # Indicates that an output vector element is unset
