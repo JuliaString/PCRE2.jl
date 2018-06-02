@@ -6,7 +6,7 @@ name = "PCRE2"
 uuid = "c9310f65-a42c-5928-aca3-d34f64192029"
 
 [deps]
-Pkg            = "fe1c5a76-5840-53d2-82f9-288dd83ce2ce"
+Pkg            = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test           = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Libdl          = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
