@@ -46,4 +46,4 @@ build_script:
       Pkg.build(pkg)"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"PCRE2\")"
+  - C:\projects\julia\bin\julia -e "VERSION < v\"0.7.0-DEV\" || (using Pkg); Pkg.test(\"PCRE2\")"
