@@ -9,11 +9,7 @@ Licensed under MIT License, see LICENSE.md
 __precompile__()
 module PCRE2
 
-const V6_COMPAT = VERSION < v"0.7.0-DEV"
-
-if VERSION >= v"0.7.0-DEV.3382"
-    import Libdl
-end
+import Libdl
 
 # Load in `deps.jl`, complaining if it does not exist
 const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
@@ -22,36 +18,25 @@ if !isfile(depsjl_path)
 end
 include(depsjl_path)
 
+PCRE_LOCK = nothing
+
 # Module initialization function
 function __init__()
     # Always check your dependencies from `deps.jl`
     check_deps()
+    @static if isdefined(Base.PCRE, :PCRE_COMPILE_LOCK)
+        global PCRE_LOCK = Base.PCRE.PCRE_COMPILE_LOCK
+    else
+        global PCRE_LOCK = Threads.SpinLock()
+    end
 end
 
 const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
 
-@static if V6_COMPAT
-    macro preserve(args...)
-        syms = args[1:end-1]
-        for x in syms
-            isa(x, Symbol) || error("Preserved variable must be a symbol")
-        end
-        esc(quote ; $(args[end]) ; end)
-    end
-    evr(str, rep, sub) = eval(current_module(), parse(replace(str, rep, sub)))
-    const Nothing = Void
-    const Cvoid   = Void
-    _ncodeunits(::Type{UInt8}, s)  = sizeof(s)
-    _ncodeunits(::Type{UInt16}, s) = sizeof(s)>>>1
-    _ncodeunits(::Type{UInt32}, s) = sizeof(s)>>>2
-    _ncodeunits(s) = _ncodeunits(codeunit(s), s)
-    create_vector(T, len) = Vector{T}(len)
-else # !V6_COMPAT
-    import Base.GC: @preserve
-    evr(str, rep, sub) = Core.eval(@__MODULE__, Meta.parse(replace(str, rep => sub)))
-    const _ncodeunits = ncodeunits
-    create_vector(T, len)  = Vector{T}(undef, len)
-end
+import Base.GC: @preserve
+evr(str, rep, sub) = Core.eval(@__MODULE__, Meta.parse(replace(str, rep => sub)))
+const _ncodeunits = ncodeunits
+create_vector(T, len)  = Vector{T}(undef, len)
 
 import Base: RefValue
 
@@ -88,9 +73,9 @@ jit_error(errno::Integer)       = throw(PCRE2_Error("JIT ", errno))
 compile_error(errno, erroff)    = throw(PCRE2_Error("compilation ", errno, erroff))
 
 function info_error(errno)
-    errno == ERROR_NULL && pcre_error("NULL regex object")
-    errno == ERROR_BADMAGIC && pcre_error("Invalid regex object")
-    errno == ERROR_BADOPTION && pcre_error("Invalid option flags")
+    errno == Base.PCRE.ERROR_NULL && pcre_error("NULL regex object")
+    errno == Base.PCRE.ERROR_BADMAGIC && pcre_error("Invalid regex object")
+    errno == Base.PCRE.ERROR_BADOPTION && pcre_error("Invalid option flags")
     pcre_error(errno)
 end
 
