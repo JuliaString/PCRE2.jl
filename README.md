@@ -7,6 +7,7 @@
 
 [release]:      https://img.shields.io/github/release/JuliaString/PCRE2.jl.svg
 [release-date]: https://img.shields.io/github/release-date/JuliaString/PCRE2.jl.svg
+[checks]:       https://img.shields.io/github/checks-status/JuliaString/PCRE2.jl/master
 
 [license-img]:  http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 [license-url]:  LICENSE.md
@@ -14,21 +15,15 @@
 [gitter-img]:   https://badges.gitter.im/Join%20Chat.svg
 [gitter-url]:   https://gitter.im/JuliaString/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-[travis-url]:   https://travis-ci.org/JuliaString/PCRE2.jl
-[travis-s-img]: https://travis-ci.org/JuliaString/PCRE2.jl.svg
-[travis-m-img]: https://travis-ci.org/JuliaString/PCRE2.jl.svg?branch=master
-
 [codecov-url]:  https://codecov.io/gh/JuliaString/PCRE2.jl
 [codecov-img]:  https://codecov.io/gh/JuliaString/PCRE2.jl/branch/master/graph/badge.svg
 
 [contrib]:    https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
 
-[![][release]][pkg-url] [![][release-date]][pkg-url] [![][license-img]][license-url] [![contributions welcome][contrib]](https://github.com/JuliaString/PCRE2.jl/issues)
-
-| **Julia Version** | **Unit Tests** | **Coverage** |
-|:------------------:|:------------------:|:---------------------:|
-| [![][julia-release]][julia-url] | [![][travis-s-img]][travis-url] | [![][codecov-img]][codecov-url]
-| Julia Latest | [![][travis-m-img]][travis-url] | [![][codecov-img]][codecov-url]
+[![][release]][pkg-url] [![][release-date]][pkg-url] [![][checks]][pkg-url] [![][codecov-img]][codecov-url] [![][license-img]][license-url] [![contributions welcome][contrib]](https://github.com/JuliaString/PCRE2.jl/issues)
 
 The `PCRE2` package implements a low-level API for accessing the PCRE libraries (8, 16, and 32-bit)
-It is intended to replace `Base.PCRE`, which is not threadsafe, only supports UTF-8, and is using an old version of the PCRE library (10.30, current version is 10.31)
+It was intended to replace `Base.PCRE` which was not threadsafe, as well as missing non-UTF-8 support.
+
+`Base.PCRE` still only supports UTF-8, which is why this is needed for the Strs package.
+It is my intention to change this to use the libraries now created by the BinaryBuilder.
