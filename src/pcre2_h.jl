@@ -1,7 +1,7 @@
 #=
 Constants for PCRE2 library API
 
-Copyright 2018 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre2.h
+Copyright 2018,2022 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre2.h
 (based on pcre2.h (copyright University of Cambridge), see PCRE2_LICENSE)
 Licensed under MIT License, see LICENSE.md
 =#
@@ -49,6 +49,7 @@ const ALT_VERBNAMES       = 0x00400000  # C
 const USE_OFFSET_LIMIT    = 0x00800000  #   J M D
 const EXTENDED_MORE       = 0x01000000  # C
 const LITERAL             = 0x02000000  # C
+const MATCH_INVALID_UTF   = 0x04000000  #   J M D
 
 ## An additional compile options word is available in the compile context.
 
@@ -56,12 +57,16 @@ const EXTRA_ALLOW_SURROGATE_ESCAPES  = 0x00000001  # C
 const EXTRA_BAD_ESCAPE_IS_LITERAL    = 0x00000002  # C
 const EXTRA_MATCH_WORD               = 0x00000004  # C
 const EXTRA_MATCH_LINE               = 0x00000008  # C
+const EXTRA_ESCAPED_CR_IS_LF         = 0x00000010  # C
+const EXTRA_ALT_BSUX                 = 0x00000020  # C
+const EXTRA_ALLOW_LOOKAROUND_BSK     = 0x00000040  # C
 
 ## These are for pcre2_jit_compile().
 
-const JIT_COMPLETE        = 0x00000001  # For full matching */
+const JIT_COMPLETE        = 0x00000001  # For full matching
 const JIT_PARTIAL_SOFT    = 0x00000002
 const JIT_PARTIAL_HARD    = 0x00000004
+const JIT_INVALID_UTF     = 0x00000100
 
 ## These are for pcre2_match(), pcre2_dfa_match(), and pcre2_jit_match().
 ## Note that PCRE2_ANCHORED and PCRE2_NO_UTF_CHECK can also be passed to these functions
@@ -90,6 +95,11 @@ const SUBSTITUTE_OVERFLOW_LENGTH  = 0x00001000
 ## A further option for match(), not allowed for dfa_match(), ignored for jit_match()
 
 const NO_JIT              = 0x00002000
+
+const COPY_MATCHED_SUBJECT        = 0x00004000
+const SUBSTITUTE_LITERAL          = 0x00008000  # pcre2_substitute() only
+const SUBSTITUTE_MATCHED          = 0x00010000  # pcre2_substitute() only
+const SUBSTITUTE_REPLACEMENT_ONLY = 0x00020000  # pcre2_substitute() only
 
 ## Options for pattern_convert()
 
@@ -162,8 +172,8 @@ const BSR_ANYCRLF         = 2
       CONFIG_VERSION,
       CONFIG_HEAPLIMIT,
       CONFIG_NEVER_BACKSLASH_C,
-      CONFIG_COMPILED_WIDTHS)
-
+      CONFIG_COMPILED_WIDTHS,
+      CONFIG_TABLES_LENGTH)
 
 # supported options for different use cases
 

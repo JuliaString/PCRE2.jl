@@ -1,35 +1,47 @@
 #=
 Low-level wrapper for PCRE2 library
 
-Copyright 2018 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre.jl and pcre2.h
+Copyright 2018,2022 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre.jl and pcre2.h
 (Based in part on julia/base/pcre.jl, and on pcre2.h (copyright University of Cambridge))
 Licensed under MIT License, see LICENSE.md
 =#
 
-__precompile__()
 module PCRE2
 
 import Libdl
+using PCRE2_jll
 
-# Load in `deps.jl`, complaining if it does not exist
-const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
-if !isfile(depsjl_path)
-    error("PCRE2 not installed properly, run Pkg.build(\"PCRE2\"), restart Julia and try again")
+const PCRE_LOCK = Base.PCRE.PCRE_COMPILE_LOCK
+
+# Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+export libpcre2_8, libpcre2_16, libpcre2_32
+
+# These get calculated in __init__()
+libpcre2_16_handle = C_NULL
+libpcre2_16_path = ""
+libpcre2_32_handle = C_NULL
+libpcre2_32_path = ""
+
+if Sys.iswindows()
+    const libpcre2_16 = "libpcre2-16-0.dll"
+    const libpcre2_32 = "libpcre2-32-0.dll"
+elseif Sys.isapple()
+    const libpcre2_16 = "libpcre2-16.0.dylib"
+    const libpcre2_32 = "libpcre2-32.0.dylib"
+else
+    const libpcre2_16 = "libpcre2-16.so.0"
+    const libpcre2_32 = "libpcre2-32.so.0"
 end
-include(depsjl_path)
 
-PCRE_LOCK = nothing
-
-# Module initialization function
 function __init__()
-    # Always check your dependencies from `deps.jl`
-    check_deps()
-    @static if isdefined(Base.PCRE, :PCRE_COMPILE_LOCK)
-        global PCRE_LOCK = Base.PCRE.PCRE_COMPILE_LOCK
-    else
-        global PCRE_LOCK = Threads.SpinLock()
-    end
+    global libpcre2_16_handle = Libdl.dlopen(libpcre2_16)
+    global libpcre2_16_path = Libdl.dlpath(libpcre2_16_handle)
+    global libpcre2_32_handle = Libdl.dlopen(libpcre2_32)
+    global libpcre2_32_path = Libdl.dlpath(libpcre2_32_handle)
 end
+
+# ??? get_libpcre2_8_path() = libpcre2_8_path
 
 const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
 
