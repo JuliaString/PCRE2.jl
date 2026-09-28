@@ -4,7 +4,7 @@ keywords = ["Strings", "PCRE", "Regex"]
 license = "MIT"
 name = "PCRE2"
 uuid = "c9310f65-a42c-5928-aca3-d34f64192029"
-version = "1.1.0"
+version = "1.2.0"
 
 [deps]
 PCRE2_jll      = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"

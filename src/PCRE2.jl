@@ -1,7 +1,7 @@
 #=
 Low-level wrapper for PCRE2 library
 
-Copyright 2018,2022 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre.jl and pcre2.h
+Copyright 2018,2022,2026 Gandalf Software, Inc., Scott P. Jones, and contributors to pcre.jl and pcre2.h
 (Based in part on julia/base/pcre.jl, and on pcre2.h (copyright University of Cambridge))
 Licensed under MIT License, see LICENSE.md
 =#
@@ -34,14 +34,24 @@ else
     const libpcre2_32 = "libpcre2-32.so.0"
 end
 
+function tryopen(file)
+    handle = C_NULL
+    try
+        handle = Libdl.dlopen(file)
+    catch
+        # try to deal with case where only the 8-bit PCRE2 library is available
+        handle = Libdl.dlopen(joinpath("/usr/local/lib", file))
+    end
+    handle
+end
+        
+
 function __init__()
-    global libpcre2_16_handle = Libdl.dlopen(libpcre2_16)
+    global libpcre2_16_handle = tryopen(libpcre2_16)
     global libpcre2_16_path = Libdl.dlpath(libpcre2_16_handle)
-    global libpcre2_32_handle = Libdl.dlopen(libpcre2_32)
+    global libpcre2_32_handle = tryopen(libpcre2_32)
     global libpcre2_32_path = Libdl.dlpath(libpcre2_32_handle)
 end
-
-# ??? get_libpcre2_8_path() = libpcre2_8_path
 
 const CodeUnitTypes = Union{UInt8, UInt16, UInt32}
 
