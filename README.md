@@ -27,3 +27,7 @@ It was intended to replace `Base.PCRE` which was not threadsafe, as well as miss
 
 `Base.PCRE` still only supports UTF-8, which is why this is needed for the Strs package.
 It is my intention to change this to use the libraries now created by the BinaryBuilder.
+
+As a backup, if it can't get the libraries from BinaryBuilder, it will look for the libpcre2
+libraries in /usr/local/lib (on MacOS and Linux), so a "brew install pcre2" should work to get
+those installed correctly.
